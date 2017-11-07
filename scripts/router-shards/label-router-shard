@@ -1,0 +1,15 @@
+#!/bin/bash
+# Usage: label-router-shard NAME SELECTION-EXPRESSION...
+#
+# Example:
+# 	./label-router-shard router NAMESAPCE_LABELS='router=router'
+# 	./label-router-shard router NAMESAPCE_LABELS='router in (router, router-nonprod)'
+#
+# @source https://docs.openshift.com/container-platform/3.5/install_config/router/default_haproxy_router.html#creating-router-shards
+
+router=$1
+shift      
+dc=dc/$router                 
+oc scale $dc --replicas=0     
+oc set env $dc "$@"             
+oc scale $dc --replicas=2

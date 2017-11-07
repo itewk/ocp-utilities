@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: egress-router-redirect-template
+  description: "Egress Router"
+  tags: "egress"
+objects:
+- kind: ReplicationController
+  apiVersion: v1
+  metadata:
+    name: ${EGRESS_NAME}
+    labels:
+      name: ${EGRESS_NAME}
+      egress: ${EGRESS_NAME}
+      template: egress-router-redirect-template
+  spec:
+    replicas: 1 
+    selector:
+      name: ${EGRESS_NAME}
+    template:
+      metadata:
+        name: ${EGRESS_NAME}
+        labels:
+          name: ${EGRESS_NAME}
+          egress: ${EGRESS_NAME}
+          template: egress-router-redirect-template
+        annotations:
+          pod.network.openshift.io/assign-macvlan: "true"
+      spec:
+        initContainers:
+        - name: ${EGRESS_NAME}-init
+          image: registry.access.redhat.com/openshift3/ose-egress-router
+          env:
+          - name: EGRESS_SOURCE 
+            value: ${EGRESS_SOURCE}
+          - name: EGRESS_GATEWAY 
+            value: ${EGRESS_GATEWAY}
+          - name: EGRESS_ROUTER_MODE 
+            value: init
+          - name: EGRESS_DESTINATION 
+            valueFrom:
+              configMapKeyRef:
+                name: ${EGRESS_NAME}-routes
+                key: destination
+          securityContext:
+            privileged: true
+        containers:
+        - name: ${EGRESS_NAME}
+          image: registry.access.redhat.com/openshift3/ose-pod
+        nodeSelector:
+          egress: ${NODE_SELECTOR_EGRESS_LABEL}
+          region: ${NODE_SELECTOR_REGION_LABEL}
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ${EGRESS_NAME}
+    labels:
+      name: ${EGRESS_NAME}
+      egress: ${EGRESS_NAME}
+      template: egress-router-redirect-template
+  spec:
+    ports:
+    - name: http
+      port: 80
+    - name: https
+      port: 443
+    type: ClusterIP
+    selector:
+      name: ${EGRESS_NAME}
+parameters:
+  - name: EGRESS_NAME
+    description: Name of the egress router
+    value: egress-redirect
+  - name: EGRESS_SOURCE
+    description: Egress source IP
+  - name: EGRESS_GATEWAY
+    description: Egress gateway
+  - name: NODE_SELECTOR_REGION_LABEL
+    description: Value of the 'region' node selector label
+    value: infra
+  - name: NODE_SELECTOR_EGRESS_LABEL
+    description: Value of the 'egress' node selector label
+    value: egress

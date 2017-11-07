@@ -1,0 +1,108 @@
+#!/bin/bash
+set -x
+
+# Persistent Elasticsearch Storage - Local Mounts
+#
+# This does the setup for doing persistent elasticsearch storage using local mounts
+#
+# This is a scripted version of the docs where each section is a step from the documentation.
+#   https://docs.openshift.com/container-platform/3.5/install_config/aggregate_logging.html#aggregated-logging-persistent-storage
+
+
+# --------------------------------------------------------------------------------
+
+#1 The relevant service account must be given the privilege to mount and edit a local volume
+echo ''
+echo ''
+echo 'Add privlage to logging service account'
+oc adm policy add-scc-to-user privileged system:serviceaccount:logging:aggregated-logging-elasticsearch 
+echo '----------'
+
+# --------------------------------------------------------------------------------
+
+#2 Each Elasticsearch replica definition must be patched to claim that privilege
+echo ''
+echo ''
+echo 'Patch Elastic search to use new privilege'
+for dc in $(oc get deploymentconfig --selector logging-infra=elasticsearch -o name); do
+  oc scale $dc --replicas=0
+  oc patch $dc -p '{"spec":{"template":{"spec":{"containers":[{"name":"elasticsearch","securityContext":{"privileged": true}}]}}}}'
+done
+echo '----------'
+
+# --------------------------------------------------------------------------------
+
+#3 The Elasticsearch replicas must be located on the correct nodes to use the local storage,
+#  and should not move around even if those nodes are taken down for a period of time.
+#  This requires giving each Elasticsearch replica a node selector that is unique to a node
+#  where an administrator has allocated storage for it. To configure a node selector,
+#  edit each Elasticsearch deployment configuration and add or edit the nodeSelector section
+# to specify a unique label that you have applied for each desired node.
+
+echo ''
+echo ''
+echo 'Label the nodes'
+# TODO: put in node names
+oc label node <NODE1> logging-es-apps-node=1
+oc label node <NODE1> logging-es-ops-node=1
+
+oc label node <NODE2> logging-es-apps-node=2
+oc label node <NODE2> logging-es-ops-node=2
+
+oc label node <NODE3> logging-es-apps-node=3
+oc label node <NODE3> logging-es-ops-node=3
+echo '----------'
+
+# update elastic search apps deployment configs with nodeSelector
+echo ''
+echo ''
+echo 'Update node selectors for apps elesatic deploymentconfigs'
+es_apps_index=1
+for dc in $(oc get deploymentconfig --selector logging-infra=elasticsearch,component=es -o name); do
+  oc patch ${dc} -p "{\"spec\":{\"template\":{\"spec\":{\"nodeSelector\":{\"logging-es-apps-node\":\"${es_apps_index}\"}}}}}"
+  let es_apps_index=es_apps_index+1
+done
+echo '----------'
+
+# update elastic search ops deployment configs with nodeSelector
+echo ''
+echo ''
+echo 'Update node selectors for ops elesatic deploymentconfigs'
+es_ops_index=1
+for dc in $(oc get deploymentconfig --selector logging-infra=elasticsearch,component=es-ops -o name); do
+  oc patch ${dc} -p "{\"spec\":{\"template\":{\"spec\":{\"nodeSelector\":{\"logging-es-ops-node\":\"${es_ops_index}\"}}}}}"
+  let es_ops_index=es_ops_index+1
+done
+echo '----------'
+
+# --------------------------------------------------------------------------------
+
+#4 Once these steps are taken, a local host mount can be applied to each replica as in this example
+#  (where we assume storage is mounted at the same path on each node)
+
+# update elastic search apps deployment configs with volume hostPath
+echo ''
+echo ''
+echo 'Update volumes for apps elesatic deploymentconfigs'
+for dc in $(oc get deploymentconfig --selector logging-infra=elasticsearch,component=es -o name); do
+    oc set volume $dc \
+          --add --overwrite --name=elasticsearch-storage \
+          --type=hostPath --path=/ocp_logging/apps
+    oc rollout latest $dc
+    oc scale $dc --replicas=1
+done
+echo '----------'
+
+# update elastic search ops deployment configs with volume hostPath
+echo ''
+echo ''
+echo 'Update volumes for ops elesatic deploymentconfigs'
+for dc in $(oc get deploymentconfig --selector logging-infra=elasticsearch,component=es-ops -o name); do
+    oc set volume $dc \
+          --add --overwrite --name=elasticsearch-storage \
+          --type=hostPath --path=/ocp_logging/ops
+    oc rollout latest $dc
+    oc scale $dc --replicas=1
+done
+echo '----------'
+

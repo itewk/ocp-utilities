@@ -1,0 +1,18 @@
+#!/bin/bash
+# Usage: create-router-shard NAME NODE-SELECTOR ROUTE-SELECTION-EXPRESSION
+#
+# Creates a new router shard with the given name, on nodes with the given labels, using the given router selection expressions.
+#
+# Example:
+# 	./create-router-shard router-foo 'region=infra,env=foo' NAMESPACE_LABELS='router=router-foo'
+#
+# @source https://docs.openshift.com/container-platform/3.5/install_config/router/default_haproxy_router.html#creating-router-shards
+
+router=$1
+selector=$2
+shift
+shift
+oadm router $router --replicas=0 --selector=$selector --service-account=router
+dc=dc/$router            
+oc set env $dc "$@"  
+oc scale $dc --replicas=2
