@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# https://access.redhat.com/webassets/avalon/j/includes/session/scribe/?redirectTo=https://access.redhat.com/documentation/en-us/red_hat_gluster_storage/3.3/html-single/container-native_storage_for_openshift_container_platform/#chap-Documentation-Red_Hat_Gluster_Storage_Container_Native_with_OpenShift_Platform-Updating_Registry
+# https://access.redhat.com/documentation/en-us/red_hat_gluster_storage/3.3/html-single/container-native_storage_for_openshift_container_platform/#chap-Documentation-Red_Hat_Gluster_Storage_Container_Native_with_OpenShift_Platform-Updating_Registry
 
 VOLUME_SIZE=10
 GLUSTER_PROJECT=gluster
