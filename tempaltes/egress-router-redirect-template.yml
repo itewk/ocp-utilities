@@ -60,10 +60,14 @@ objects:
       template: egress-router-redirect-template
   spec:
     ports:
-    - name: http
-      port: 80
-    - name: https
-      port: 443
+    - name: sample-tcp
+      port: 1234
+      protocol: TCP
+      targetPort: 1234
+    - name: sample-tcp
+      port: 4321
+      protocol: UDP
+      targetPort: 4321
     type: ClusterIP
     selector:
       name: ${EGRESS_NAME}
