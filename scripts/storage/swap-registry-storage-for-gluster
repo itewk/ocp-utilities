@@ -65,8 +65,7 @@ spec:
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain" | oc create -f - -n default
-echo '----------'
-
+echo '----------' 
 echo ''
 echo ''
 echo 'Create Gluster Registry claim'
@@ -121,7 +120,7 @@ echo '----------'
 echo ''
 echo ''
 echo 'Rsync /registry to /gluster-registry'
-oc rsh ${REGISTRY_POD} rsync -r /registry/ /gluster-registry/
+oc rsh ${REGISTRY_POD} rsync -r -v /registry/ /gluster-registry/
 echo '----------'
 
 echo ''
