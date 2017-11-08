@@ -1,4 +1,4 @@
-- name: OCP | Stop Applicaiton Nodes Services
+- name: OCP | Stop Application Nodes Services
   hosts: app-nodes
   tasks:
     - name: Stop OpenShift Node
@@ -47,7 +47,7 @@
   tasks:
     - include_tasks: tasks/reboot.yml
 
-- name: OCP | Reboot Applicaiton Node Hosts
+- name: OCP | Reboot Application Node Hosts
   hosts: app-nodes
   tasks:
     - include_tasks: tasks/reboot.yml
