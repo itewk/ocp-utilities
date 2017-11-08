@@ -64,7 +64,7 @@ objects:
       port: 1234
       protocol: TCP
       targetPort: 1234
-    - name: sample-tcp
+    - name: sample-udp
       port: 4321
       protocol: UDP
       targetPort: 4321
