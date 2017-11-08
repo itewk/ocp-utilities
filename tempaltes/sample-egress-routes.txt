@@ -1,0 +1,6 @@
+# sample routes
+1234 tcp 1.1.1.1
+4321 udp 2.2.2.2 
+
+# sample default
+3.3.3.3
